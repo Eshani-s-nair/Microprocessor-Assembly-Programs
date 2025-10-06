@@ -1,84 +1,108 @@
-; Program to sum two 2-digit numbers input as characters
 .MODEL SMALL
 .STACK 100h
 .DATA
-MSG1 DB 'Enter first number (2 digits): $'
-MSG2 DB 0Dh,0Ah,'Enter second number (2 digits): $'
-MSG3 DB 0Dh,0Ah,'Sum is: $'
-
+MSG1 DB 'ENTER FIRST NUMBER : $'
+MSG2 DB 0DH,0AH,'ENTER SECOND NUMBER : $'
+num1 DW ?
+num2 DW ?
+result DW ?
+msg3 DB 0DH,0AH,'Sum is: $'
+buffer DB 6 DUP('$') 
 .CODE
-START:
+MAIN PROC
     MOV AX,@DATA
     MOV DS,AX
 
-    ; --- Input first number ---
     LEA DX,MSG1
     MOV AH,09H
     INT 21H
 
-    ; Higher digit
     MOV AH,01H
     INT 21H
     SUB AL,'0'
     MOV BH,AL
 
-    ; Lower digit
     MOV AH,01H
     INT 21H
     SUB AL,'0'
     MOV BL,AL
 
-    ; --- Input second number ---
+    MOV CL,10
+    MOV AL,BH
+    MUL CL
+    ADD AL,BL
+    MOV num1,AX
+
     LEA DX,MSG2
     MOV AH,09H
     INT 21H
 
-    ; Higher digit
     MOV AH,01H
     INT 21H
     SUB AL,'0'
     MOV CH,AL
 
-    ; Lower digit
     MOV AH,01H
     INT 21H
     SUB AL,'0'
     MOV CL,AL
+    
+    MOV BL,10
+    MOV AL,CH
+    MUL BL
+    ADD AL,CL
+    MOV num2,AX
+    
+    MOV AX,num1
+    ADD AX,num2
+    MOV result,AX
 
-    ; --- Add lower digits with manual carry ---
-    MOV AL, BL
-    ADD AL, CL
-    CMP AL, 10
-    JB NoCarryLower
-    SUB AL, 10
-    INC BH              ; carry to higher digit
-NoCarryLower:
-    MOV BL, AL          ; store lower result
+    LEA DX,msg3
+    MOV AH,09h
+    INT 21h
 
-    ; --- Add higher digits + carry ---
-    MOV AL, BH
-    ADD AL, CH
-    MOV BH, AL          ; store higher digit result
+    MOV AX,result
+    CALL DisplayDecimal
 
-    ; --- Display result ---
-    LEA DX,MSG3
-    MOV AH,09H
-    INT 21H
+    MOV AH,4Ch
+    INT 21h
+MAIN ENDP
 
-    ; Display higher digit
-    ADD BH,'0'
-    MOV DL,BH
-    MOV AH,02H
-    INT 21H
+DisplayDecimal PROC
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH SI
 
-    ; Display lower digit
-    ADD BL,'0'
-    MOV DL,BL
-    MOV AH,02H
-    INT 21H
+    MOV CX,0
+    MOV BX,10
+    MOV DX,0
+    MOV SI,OFFSET buffer+4 ; last position of buffer
 
-    ; --- Exit program ---
-    MOV AH,4CH
-    INT 21H
+.next_digit:
+    DIV BX             ; AX / 10 -> quotient in AX, remainder in DX
+    ADD DL,'0'
+    MOV [SI],DL
+    DEC SI
+    INC CX
+    MOV DX,0
+    TEST AX,AX
+    JNZ .next_digit
+    INC SI              ; point to first valid digit
+.print_digits:
+    MOV DL,[SI]
+    MOV AH,02h
+    INT 21h
+    INC SI
+    DEC CX
+    JNZ .print_digits
 
-END START
+    POP SI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+DisplayDecimal ENDP
+END MAIN
