@@ -4,7 +4,7 @@
 .model small
 .stack 100h
 .data
-msg db "hello, suckerss",0
+msg db "hello",0
 
 .code
 main PROC
