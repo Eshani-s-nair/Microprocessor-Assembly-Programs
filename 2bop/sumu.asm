@@ -1,3 +1,4 @@
+;addition of 2 digit numbers user input 
 .MODEL SMALL
 .STACK 100h
 .DATA
